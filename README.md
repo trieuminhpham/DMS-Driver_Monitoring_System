@@ -24,13 +24,13 @@ To build this project, you need a Host machine (Linux) with a configured Yocto S
 We use an "out-of-source" build approach to keep the workspace clean.
 
     Source the Yocto SDK environment:
-    ``Bash
+    ```Bash
 
     # Note: Replace the path below with your actual Yocto SDK environment setup script path
     source /opt/poky/4.0.33/environment-setup-cortexa72-poky-linux
 
     Create a build directory and compile:
-    ``Bash
+    ```Bash
 
     mkdir build && cd build
     cmake ..
@@ -41,7 +41,7 @@ We use an "out-of-source" build approach to keep the workspace clean.
 Once compiled, you need to transfer the binary and the AI models to your Raspberry Pi via SCP.
 
     Transfer files to the target board:
-    ``Bash
+    ```Bash
 
     # Create a directory on the Raspberry Pi
     ssh root@<RPI_IP_ADDRESS> "mkdir -p /home/root/dms_app"
@@ -51,7 +51,7 @@ Once compiled, you need to transfer the binary and the AI models to your Raspber
     scp -r models/ root@<RPI_IP_ADDRESS>:/home/root/dms_app/
 
     Run the application:
-    ``Bash
+    ```Bash
 
     ssh root@<RPI_IP_ADDRESS>
     cd /home/root/dms_app/
