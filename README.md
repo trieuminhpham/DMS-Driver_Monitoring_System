@@ -1,66 +1,167 @@
 # Driver Monitoring System (DMS) - Embedded Linux
 
-This repository contains the core C++ application for a Driver Monitoring System (DMS) optimized for embedded Linux devices (e.g., Raspberry Pi). The system utilizes OpenCV and Haar Cascade Classifiers to detect driver drowsiness in real-time.
+This repository contains the core C++ application for a **Driver Monitoring System (DMS)** optimized for **embedded Linux devices (Raspberry Pi)**.  
+The system captures video from a camera, processes frames using **OpenCV**, and detects driver drowsiness using **Haar Cascade classifiers**.
 
-## 🚀 Key Features
+The project focuses on **embedded system design, multithreading architecture, and Yocto-based cross compilation**, where AI models are used mainly as a practical tool for face and eye detection.
 
-* **Real-time Detection**: Uses `haarcascade` to detect faces and eyes.
-* **Multi-threading**: Decouples the camera reading stream from the AI processing stream using `std::thread`, `std::mutex`, and `std::condition_variable` to ensure high performance and prevent CPU bottlenecks.
-* **Drowsiness Alert**: Evaluates consecutive frames of closed eyes to trigger warnings.
-* **Embedded Optimized**: Written in C++14 and built via Yocto SDK Cross-compilation for maximum performance on ARM architectures.
+---
 
-🛠 Prerequisites
+# 🚀 Key Features
 
-To build this project, you need a Host machine (Linux) with a configured Yocto SDK Toolchain.
+### Real-time Face and Eye Detection
+The system uses **Haar Cascade classifiers** to detect the driver's **face and eyes** in real time.
 
-    CMake (v3.10 or higher)
+### Multi-threaded Processing
+The application separates **camera capture** and **AI processing** into two threads using:
 
-    Yocto SDK (Targeting your specific Raspberry Pi architecture)
+- `std::thread`
+- `std::mutex`
+- `std::condition_variable`
 
-    OpenCV (Included in the Yocto sysroot)
+This architecture allows the system to **utilize multiple CPU cores on Raspberry Pi 4** and prevents blocking between video capture and AI processing.
 
-⚙️ Build Instructions
+### Drowsiness Detection Logic
+Driver drowsiness is determined by counting **consecutive frames where eyes remain closed**.
 
-We use an "out-of-source" build approach to keep the workspace clean.
+If the number of closed-eye frames exceeds a threshold (e.g., **6 frames**), the system triggers a **warning alert**.
 
-    Source the Yocto SDK environment:
-    ```Bash
+This threshold helps prevent false alarms caused by **natural human blinking**.
 
-    # Note: Replace the path below with your actual Yocto SDK environment setup script path
-    source /opt/poky/4.0.33/environment-setup-cortexa72-poky-linux
+### Embedded Optimization
+The project is implemented in **C++14** and built using a **Yocto SDK cross-compilation environment**, targeting **ARM architecture on Raspberry Pi**.
 
-    Create a build directory and compile:
-    ```Bash
+---
 
-    mkdir build && cd build
-    cmake ..
-    make -j$(nproc)
+# 🧠 System Architecture
 
-📦 Deployment & Execution
+The system consists of the following pipeline:
 
-Once compiled, you need to transfer the binary and the AI models to your Raspberry Pi via SCP.
+Camera Input  
+↓  
+Video Capture (V4L2 / OpenCV)  
+↓  
+Frame Buffer (Shared Memory)  
+↓  
+Face & Eye Detection (OpenCV Haar Cascade)  
+↓  
+Drowsiness Decision Logic  
+↓  
+Driver Warning / Display Output
 
-    Transfer files to the target board:
-    ```Bash
+The application uses a **producer–consumer model**:
 
-    # Create a directory on the Raspberry Pi
-    ssh root@<RPI_IP_ADDRESS> "mkdir -p /home/root/dms_app"
+- **Thread 1 (Producer)**: captures frames from the camera
+- **Thread 2 (Consumer)**: processes frames using AI detection
 
-    # Copy the binary and models directory
-    scp build/dms_core_v2 root@<RPI_IP_ADDRESS>:/home/root/dms_app/
-    scp -r models/ root@<RPI_IP_ADDRESS>:/home/root/dms_app/
+---
 
-    Run the application:
-    ```Bash
+# 🛠 Prerequisites
 
-    ssh root@<RPI_IP_ADDRESS>
-    cd /home/root/dms_app/
-    ./dms_core_v2
+To build this project, you need a **Linux host machine** with a configured **Yocto SDK toolchain**.
 
-⚠️ Known Limitations & Future Improvements
+Required tools:
 
-    Haar Cascade Accuracy: The current model uses Bounding Box object detection. It may trigger false positives (e.g., struggling with drivers wearing dark sunglasses, looking down, or in low-light conditions).
+- CMake (version 3.10 or higher)
+- Yocto SDK targeting Raspberry Pi
+- OpenCV (available inside the Yocto sysroot)
+- GCC cross compiler from Yocto SDK
 
-    Next Steps: Future iterations will migrate to Facial Landmarks (EAR - Eye Aspect Ratio calculation) using Dlib or MediaPipe to significantly improve accuracy and distinguish between normal blinking and sleeping.
+---
 
-    X11 Forwarding: If running via SSH, you must enable X11 Forwarding (ssh -X) to view the OpenCV imshow UI on your host machine's monitor.
+# ⚙️ Build Instructions
+
+The project uses an **out-of-source build** approach.
+
+### 1. Source the Yocto SDK environment
+
+```bash
+source /opt/poky/4.0.33/environment-setup-cortexa72-poky-linux
+```
+
+*(Replace the path with your actual Yocto SDK environment script.)*
+
+### 2. Build the project
+
+```bash
+mkdir build
+cd build
+
+cmake ..
+make -j$(nproc)
+```
+
+After compilation, the executable binary will be generated in the `build` directory.
+
+---
+
+# 📦 Deployment & Execution
+
+After building, transfer the binary and models to the Raspberry Pi.
+
+### 1. Create a directory on the Raspberry Pi
+
+```bash
+ssh root@<RPI_IP_ADDRESS> "mkdir -p /home/root/dms_app"
+```
+
+### 2. Transfer application files
+
+```bash
+scp build/dms_core_v2 root@<RPI_IP_ADDRESS>:/home/root/dms_app/
+scp -r models/ root@<RPI_IP_ADDRESS>:/home/root/dms_app/
+```
+
+### 3. Run the application
+
+```bash
+ssh root@<RPI_IP_ADDRESS>
+
+cd /home/root/dms_app
+./dms_core_v2
+```
+
+---
+
+# ⚠️ Known Limitations
+
+### Haar Cascade Accuracy
+
+The current implementation uses **bounding box object detection**, which has several limitations:
+
+- Difficulty detecting eyes when the driver wears **dark sunglasses**
+- Lower accuracy when the driver **looks downward**
+- Reduced performance in **low-light conditions**
+
+---
+
+# 🖥 X11 Forwarding (Optional)
+
+If running the application via SSH and you want to display the OpenCV window on your host machine:
+
+```bash
+ssh -Y root@<RPI_IP_ADDRESS>
+```
+
+Then run the program normally.
+
+---
+
+# 📂 Repository Structure
+
+```
+DMS
+├── src                # Core C++ source code
+├── models             # Haar Cascade models
+├── docs               # System architecture and diagrams
+├── demo               # Demo videos
+├── test_cam           # Camera test programs
+├── CMakeLists.txt
+└── README.md
+```
+
+---
+
+# 📜 License
+
+This project is developed for **research and educational purposes** in embedded systems and driver monitoring applications.
