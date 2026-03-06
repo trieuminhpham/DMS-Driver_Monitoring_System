@@ -24,7 +24,7 @@ This architecture allows the system to **utilize multiple CPU cores on Raspberry
 ### Drowsiness Detection Logic
 Driver drowsiness is determined by counting **consecutive frames where eyes remain closed**.
 
-If the number of closed-eye frames exceeds a threshold (e.g., **6 frames**), the system triggers a **warning alert**.
+If the number of closed-eye frames exceeds a threshold (e.g., **10 frames**), the system triggers a **warning alert**.
 
 This threshold helps prevent false alarms caused by **natural human blinking**.
 
@@ -161,7 +161,3 @@ DMS
 ```
 
 ---
-
-# 📜 License
-
-This project is developed for **research and educational purposes** in embedded systems and driver monitoring applications.
